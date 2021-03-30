@@ -1,0 +1,16 @@
+{
+    "_QPVersion": "0.1.1",
+    "name": "Discord Presence",
+    "id": "discord-presence",
+    "author": "Lauriethefish#6700",
+    "version": "0.3.1",
+    "packageId": "com.beatgames.beatsaber",
+    "packageVersion": "1.14.0",
+    "type": "Gameplay",
+    "modFiles": [
+        "libdiscord-presence.so"
+    ],
+    "libraryFiles": [
+        "libbeatsaber-hook_1_2_4.so"
+    ]
+}
