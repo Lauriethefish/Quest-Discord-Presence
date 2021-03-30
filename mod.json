@@ -12,5 +12,11 @@
     ],
     "libraryFiles": [
         "libbeatsaber-hook_1_2_4.so"
+    ],
+    "fileCopies": [
+        {
+            "name": "module.json",
+            "destination": "/sdcard/Android/data/com.madmagic.oqrpc/files/OQRPC Modules/com.beatgames.beatsaber.json"
+        }
     ]
 }
