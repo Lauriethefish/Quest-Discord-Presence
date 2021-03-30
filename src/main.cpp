@@ -67,7 +67,18 @@ MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
 }
 
 int currentFrame = -1;
-MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* difficultyBeatmap, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, PracticeSettings* practiceSettings, Il2CppString* g, bool h) {
+MAKE_HOOK_OFFSETLESS(SongStart, void,
+        Il2CppObject* self,
+        Il2CppString* gameMode,
+        Il2CppObject* difficultyBeatmap,
+        Il2CppObject* previewBeatmapLevel,
+        Il2CppObject* overrideEnvironmentSettings,
+        Il2CppObject* overrideColorScheme,
+        Il2CppObject* gameplayModifiers,
+        Il2CppObject* playerSpecificSettings,
+        PracticeSettings* practiceSettings,
+        Il2CppString* backButtonText,
+        bool useTestNoteCutSoundEffects) {
     getLogger().info("Song Started");
     currentFrame = -1;
     int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
@@ -82,11 +93,22 @@ MAKE_HOOK_OFFSETLESS(SongStart, void, Il2CppObject* self, Il2CppString* gameMode
     if(presenceManager->isPractice) {
         getLogger().info("Practice mode is enabled!");
     }
-    SongStart(self, gameMode, difficultyBeatmap, b, c, d, e, practiceSettings, g, h);
+    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
 }
 
 // Multiplayer song starting is handled differently
-MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppString* gameMode, Il2CppObject* previewBeatmapLevel, int beatmapDifficulty, Il2CppObject* a, Il2CppObject* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, bool g) {
+MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void,
+        Il2CppObject* self,
+        Il2CppString* gameMode,
+        Il2CppObject* previewBeatmapLevel,
+        int beatmapDifficulty,
+        Il2CppObject* beatmapCharacteristic,
+        Il2CppObject* difficultyBeatmap,
+        Il2CppObject* overrideColorScheme,
+        Il2CppObject* gameplayModifiers,
+        Il2CppObject* playerSpecificSettings,
+        Il2CppObject* practiceSettings,
+        bool useTestNoteCutSoundEffects) {
     getLogger().info("Multiplayer Song Started");
     selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
     presenceManager->statusLock.lock();
@@ -94,7 +116,7 @@ MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void, Il2CppObject* self, Il2CppStrin
     presenceManager->statusLock.unlock();
 
 
-    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, a, b, c, d, e, f, g);
+    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, beatmapCharacteristic, difficultyBeatmap, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, useTestNoteCutSoundEffects);
 }
 
 void onPlayerJoin() {
@@ -183,13 +205,22 @@ MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
     TutorialEnd(self);
 }
 
-MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void, Il2CppObject* self, Il2CppObject* a, Il2CppArray* b, Il2CppObject* c, Il2CppObject* d, Il2CppObject* e, Il2CppObject* f, Il2CppString* g)   {
+MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void,
+        Il2CppObject* self,
+        Il2CppString* missionId,
+        Il2CppObject* difficultyBeatmap,
+        Il2CppObject* previewBeatmapLevel,
+        Il2CppArray* missionObjectives,
+        Il2CppObject* overrideColorScheme,
+        Il2CppObject* gameplayModifiers,
+        Il2CppObject* playerSpecificSettings,
+        Il2CppString* backButtonText)   {
     getLogger().info("Campaign level starting");
     currentFrame = -1;
     presenceManager->statusLock.lock();
     presenceManager->playingCampaign = true;
     presenceManager->statusLock.unlock();
-    CampaignLevelStart(self, a, b, c, d, e, f, g);
+    CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
 }
 MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
     getLogger().info("Campaign level ending");
@@ -300,9 +331,9 @@ extern "C" void load() {
     // Install our function hooks
     Logger& logger = getLogger();
     INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 9));
+    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
     INSTALL_HOOK_OFFSETLESS(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 7));
+    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
     INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
     INSTALL_HOOK_OFFSETLESS(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
