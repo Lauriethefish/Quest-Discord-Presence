@@ -10,10 +10,7 @@
                 "command": "ndk-build.cmd"
             },
             "args": ["NDK_PROJECT_PATH=.", "APP_BUILD_SCRIPT=./Android.mk", "NDK_APPLICATION_MK=./Application.mk"],
-            "group": "build",
-            "options": {
-                "env": {}
-            }
+            "group": "build"
         },
         {
             "label": "Powershell Build",
@@ -26,10 +23,6 @@
             "group": {
                 "kind": "build",
                 "isDefault": true
-            },
-            "options": {
-                "env": {},
-                "cwd": "./discord-presence/"
             }
         },
         {
@@ -40,11 +33,7 @@
             "windows": {
                 "command": "./copy.ps1"
             },
-            "group": "build",
-            "options": {
-                "env": {},
-                "cwd": "./discord-presence/"
-            }
+            "group": "build"
         },
         {
             "label": "QMOD Build",
@@ -55,20 +44,13 @@
                 "command": "./buildQMOD.ps1"
             },
             "args": [],
-            "group": "build",
-            "options": {
-                "env": {},
-                "cwd": "./discord-presence/"
-            }
+            "group": "build"
         },
         {
             "label": "Start logging",
             "detail": "Records a log to log.txt using adb logcat",
             "type": "shell",
-            "command": "./startlogging.bat",
-            "options": {
-                "cwd": "./discord-presence/"
-            }
+            "command": "./startlogging.bat"
         }
     ]
 }
