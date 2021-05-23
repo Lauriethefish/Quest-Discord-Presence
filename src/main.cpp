@@ -88,11 +88,12 @@ MAKE_HOOK_OFFSETLESS(SongStart, void,
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->isPractice = practiceSettings; // If practice settings isn't null, then we're in practice mode
-    presenceManager->statusLock.unlock();
 
     if(presenceManager->isPractice) {
         getLogger().info("Practice mode is enabled!");
     }
+    presenceManager->statusLock.unlock();
+
     SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
 }
 

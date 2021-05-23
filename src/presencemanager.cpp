@@ -36,6 +36,7 @@ void PresenceManager::threadEntrypoint()    {
 
 // Creates the JSON to send back to MadMagic's application
 std::string PresenceManager::constructResponse() {
+    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     std::string configSection;
     if(playingTutorial) {
         configSection = "tutorialPresence";
@@ -66,13 +67,11 @@ std::string PresenceManager::constructResponse() {
     auto& alloc = doc.GetAllocator();
     doc.SetObject();
 
-    statusLock.lock(); // Lock the mutex so that stuff doesn't get overwritten while we're reading from it
     std::string details = handlePlaceholders(config[configSection.c_str()]["details"].GetString());
     doc.AddMember("details", details, alloc);
 
     std::string state = handlePlaceholders(config[configSection.c_str()]["state"].GetString());
     doc.AddMember("state", state, alloc);
-    statusLock.unlock();
 
     if(playingCampaign || playingLevel.has_value()) {
         if(!paused) {
@@ -81,6 +80,7 @@ std::string PresenceManager::constructResponse() {
     }   else if((configSection == "menuPresence" || configSection == "multiplayerLobbyPresence") && !didStatusTypeChange) { // We have to set elapsed to false temporarily to tell the app that we want to reset the time
         doc.AddMember("elapsed", true, alloc);
     }
+    statusLock.unlock();
 
     doc.AddMember("largeImageKey", "image", alloc);
     doc.AddMember("smallImageKey", "quest", alloc);
