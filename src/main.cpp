@@ -1,5 +1,3 @@
-#define NO_CODEGEN_USE
-
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/utils/il2cpp-functions.hpp"
 #include "beatsaber-hook/shared/utils/utils.h"
@@ -7,6 +5,7 @@
 #include "beatsaber-hook/shared/utils/il2cpp-utils.hpp"
 #include "beatsaber-hook/shared/utils/typedefs.h"
 #include "beatsaber-hook/shared/config/config-utils.hpp"
+#include "beatsaber-hook/shared/utils/hooking.hpp"
 
 #include "UnityEngine/Resources.hpp"
 
@@ -17,6 +16,22 @@
 #include "GlobalNamespace/MultiplayerSessionManager.hpp"
 #include "GlobalNamespace/GameServerLobbyFlowCoordinator.hpp"
 #include "GlobalNamespace/PracticeSettings.hpp"
+#include "GlobalNamespace/StandardLevelDetailView.hpp"
+#include "GlobalNamespace/StandardLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/IBeatmapLevel.hpp"
+#include "GlobalNamespace/MultiplayerLocalActivePlayerGameplayManager.hpp"
+#include "GlobalNamespace/StandardLevelGameplayManager.hpp"
+#include "GlobalNamespace/TutorialSongController.hpp"
+#include "GlobalNamespace/MissionLevelScenesTransitionSetupDataSO.hpp"
+#include "GlobalNamespace/MissionLevelGameplayManager.hpp"
+#include "GlobalNamespace/PauseController.hpp"
+#include "GlobalNamespace/AudioTimeSyncController.hpp"
+#include "GlobalNamespace/MenuTransitionsHelper.hpp"
+#include "GlobalNamespace/BeatmapDifficulty.hpp"
+#include "GlobalNamespace/IDifficultyBeatmap.hpp"
+#include "GlobalNamespace/ILobbyPlayersDataModel.hpp"
+#include "GlobalNamespace/BeatmapDifficulty.hpp"
+#include "System/Collections/Generic/IReadOnlyDictionary_2.hpp"
 using namespace GlobalNamespace;
 
 #include "modloader/shared/modloader.hpp"
@@ -39,49 +54,66 @@ static PresenceManager* presenceManager = nullptr;
 static LevelInfo selectedLevel;
 
 // Converts the int representing an IBeatmapDifficulty into a string
-std::string difficultyToString(int difficulty)  {
+std::string difficultyToString(BeatmapDifficulty difficulty)  {
     switch(difficulty)  {
-        case 0:
+        case BeatmapDifficulty::Easy:
             return "Easy";
-        case 1:
+        case BeatmapDifficulty::Normal:
             return "Normal";
-        case 2:
+        case BeatmapDifficulty::Hard:
             return "Hard";
-        case 3:
+        case BeatmapDifficulty::Expert:
             return "Expert";
-        case 4:
+        case BeatmapDifficulty::ExpertPlus:
             return "Expert+";
     }
     return "Unknown";
 }
 
 // Define the current level by finding info from the IBeatmapLevel object
-MAKE_HOOK_OFFSETLESS(RefreshContent, void, Il2CppObject* self) {
-    RefreshContent(self);
+MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
+    StandardLevelDetailView_RefreshContent(self);
 
-    Il2CppObject* level = CRASH_UNLESS(il2cpp_utils::GetFieldValue(self, "_level"));
+    IPreviewBeatmapLevel* level = reinterpret_cast<IPreviewBeatmapLevel*>(self->_get__level());
     // Check if the level is an instance of BeatmapLevelSO
-    selectedLevel.name = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songName"))));
-    selectedLevel.levelAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "levelAuthorName"))));
-    selectedLevel.songAuthor = to_utf8(csstrtostr((Il2CppString*) CRASH_UNLESS(il2cpp_utils::GetPropertyValue(level, "songAuthorName"))));
+    selectedLevel.name = to_utf8(csstrtostr(level->get_songName()));
+    selectedLevel.levelAuthor = to_utf8(csstrtostr(level->get_levelAuthorName()));
+    selectedLevel.songAuthor = to_utf8(csstrtostr(level->get_songAuthorName()));
 }
 
-int currentFrame = -1;
-MAKE_HOOK_OFFSETLESS(SongStart, void,
-        Il2CppObject* self,
+static int currentFrame = -1;
+
+// Called when starting a non-multiplayer level
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(
+        Il2CppString*,
+        IDifficultyBeatmap*,
+        IPreviewBeatmapLevel*,
+        OverrideEnvironmentSettings*,
+        ColorScheme*,
+        GameplayModifiers*,
+        PlayerSpecificSettings*,
+        PracticeSettings*,
+        Il2CppString*,
+        bool,
+        System::Action*,
+        System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>*)>(&MenuTransitionsHelper::StartStandardLevel),
+        void,
+        MenuTransitionsHelper* self,
         Il2CppString* gameMode,
-        Il2CppObject* difficultyBeatmap,
-        Il2CppObject* previewBeatmapLevel,
-        Il2CppObject* overrideEnvironmentSettings,
-        Il2CppObject* overrideColorScheme,
-        Il2CppObject* gameplayModifiers,
-        Il2CppObject* playerSpecificSettings,
+        IDifficultyBeatmap* difficultyBeatmap,
+        IPreviewBeatmapLevel* previewBeatmapLevel,
+        OverrideEnvironmentSettings* overrideEnvironmentSettings,
+        ColorScheme* overrideColorScheme,
+        GameplayModifiers* gameplayModifiers,
+        PlayerSpecificSettings* playerSpecificSettings,
         PracticeSettings* practiceSettings,
         Il2CppString* backButtonText,
-        bool useTestNoteCutSoundEffects) {
-    getLogger().info("Song Started");
+        bool useTestNoteCutCountEffects,
+        System::Action* beforeSceneSwitchCallback,
+        System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>* levelFinishedCallback) {
+            getLogger().info("Song Started");
     currentFrame = -1;
-    int difficulty = CRASH_UNLESS(il2cpp_utils::GetPropertyValue<int>(difficultyBeatmap, "difficulty"));
+    BeatmapDifficulty difficulty = difficultyBeatmap->get_difficulty();
     selectedLevel.selectedDifficulty = difficultyToString(difficulty);
 
     // Set the currently playing level to the selected one, since we are in a song
@@ -94,41 +126,83 @@ MAKE_HOOK_OFFSETLESS(SongStart, void,
     }
     presenceManager->statusLock.unlock();
 
-    SongStart(self, gameMode, difficultyBeatmap, previewBeatmapLevel, overrideEnvironmentSettings, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, backButtonText, useTestNoteCutSoundEffects);
+    MenuTransitionsHelper_StartStandardLevel(
+        self,
+        gameMode,
+        difficultyBeatmap,
+        previewBeatmapLevel,
+        overrideEnvironmentSettings,
+        overrideColorScheme,
+        gameplayModifiers,
+        playerSpecificSettings,
+        practiceSettings,
+        backButtonText,
+        useTestNoteCutCountEffects,
+        beforeSceneSwitchCallback,
+        levelFinishedCallback
+    );
 }
 
-// Multiplayer song starting is handled differently
-MAKE_HOOK_OFFSETLESS(MultiplayerSongStart, void,
-        Il2CppObject* self,
-        Il2CppString* gameMode,
-        Il2CppObject* previewBeatmapLevel,
-        int beatmapDifficulty,
-        Il2CppObject* beatmapCharacteristic,
-        Il2CppObject* difficultyBeatmap,
-        Il2CppObject* overrideColorScheme,
-        Il2CppObject* gameplayModifiers,
-        Il2CppObject* playerSpecificSettings,
-        Il2CppObject* practiceSettings,
-        bool useTestNoteCutSoundEffects) {
+// Called when starting a multiplayer level
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (MenuTransitionsHelper::*)(
+    Il2CppString*,
+    IPreviewBeatmapLevel*,
+    BeatmapDifficulty,
+    BeatmapCharacteristicSO*,
+    IDifficultyBeatmap*,
+    ColorScheme*,
+    GameplayModifiers*,
+    PlayerSpecificSettings*,
+    PracticeSettings*,
+    Il2CppString*,
+    bool,
+    System::Action*,
+    System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>*,
+    System::Action_1<DisconnectedReason>*)>(&MenuTransitionsHelper::StartMultiplayerLevel), void,
+    MenuTransitionsHelper* self,
+    Il2CppString* gameMode,
+    IPreviewBeatmapLevel* previewBeatmapLevel,
+    BeatmapDifficulty beatmapDifficulty,
+    BeatmapCharacteristicSO* beatmapCharacteristic,
+    IDifficultyBeatmap* difficultyBeatmap,
+    ColorScheme* overrideColorScheme,
+    GameplayModifiers* gameplayModifiers,
+    PlayerSpecificSettings* playerSpecificSettings,
+    PracticeSettings* practiceSettings,
+    Il2CppString* backButtonText,
+    bool useTestNoteCutSoundEffects,
+    System::Action* beforeSceneSwitchCallback,
+    System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>* levelFinishedCallback,
+    System::Action_1<DisconnectedReason>* didDisconnectCallback) {
+
     getLogger().info("Multiplayer Song Started");
     selectedLevel.selectedDifficulty = difficultyToString(beatmapDifficulty);
     presenceManager->statusLock.lock();
     presenceManager->playingLevel.emplace(selectedLevel);
     presenceManager->statusLock.unlock();
-
-
-    MultiplayerSongStart(self, gameMode, previewBeatmapLevel, beatmapDifficulty, beatmapCharacteristic, difficultyBeatmap, overrideColorScheme, gameplayModifiers, playerSpecificSettings, practiceSettings, useTestNoteCutSoundEffects);
+    
+    MenuTransitionsHelper_StartMultiplayerLevel(
+        self,
+        gameMode,
+        previewBeatmapLevel,
+        beatmapDifficulty,
+        beatmapCharacteristic,
+        difficultyBeatmap,
+        overrideColorScheme,
+        gameplayModifiers,
+        playerSpecificSettings,
+        practiceSettings,
+        backButtonText,
+        useTestNoteCutSoundEffects,
+        beforeSceneSwitchCallback,
+        levelFinishedCallback,
+        didDisconnectCallback
+    );
 }
 
-void onPlayerJoin() {
+void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager* multiplayerSessionManager, Il2CppString* userId) {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers++;
-    presenceManager->statusLock.unlock();
-}
-
-void onPlayerLeave() {
-    presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers--;
+    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount();
     presenceManager->statusLock.unlock();
 }
 
@@ -140,21 +214,25 @@ void onLobbyDisconnect() {
     presenceManager->statusLock.unlock();
 }
 
-MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {
+MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlowCoordinator::DidActivate, void, GameServerLobbyFlowCoordinator* self, bool firstActivation, bool addedToHierarchy, bool screenSystemEnabling)    {    
     getLogger().info("Joined multiplayer lobby");
-    IMultiplayerSessionManager* sessionManager = self->multiplayerSessionManager;
 
+    // TODO avoid FindObjectsOfTypeAll calls if possible
+    // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
+
+    // Used for getting max player count
+    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
+    IMultiplayerSessionManager* sessionManager = reinterpret_cast<IMultiplayerSessionManager*>(UnityEngine::Resources::FindObjectsOfTypeAll<MultiplayerSessionManager*>()->values[0]);
+    
+    // Used for updating current player count in the DidChange event
+    ILobbyPlayersDataModel* lobbyPlayersDataModel = self->_get__lobbyPlayersDataModel();
+    
+    
     int maxPlayers = sessionManager->get_maxPlayerCount();
     int numActivePlayers = sessionManager->get_connectedPlayerCount();
-
-    // Register player join and leave events
-    sessionManager->add_playerDisconnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerLeave)
-    );
-
-    sessionManager->add_playerConnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<IConnectedPlayer*>*>(classof(System::Action_1<IConnectedPlayer*>*), static_cast<Il2CppObject*>(nullptr), onPlayerJoin)
-    );
+    
+    // Used to update player count
+    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), lobbyPlayersDataModel, handleLobbyPlayersDataModelDidChange));
 
     // Register disconnect from lobby event
     sessionManager->add_disconnectedEvent(
@@ -169,94 +247,104 @@ MAKE_HOOK_OFFSETLESS(MultiplayerJoinLobby, void, GameServerLobbyFlowCoordinator*
     presenceManager->multiplayerLobby.emplace(lobbyInfo);
     presenceManager->statusLock.unlock();
 
-    MultiplayerJoinLobby(self, firstActivation, addedToHierarchy, screenSystemEnabling);
+    GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
 
-MAKE_HOOK_OFFSETLESS(SongEnd, void, Il2CppObject* self) {
+// Called on standard level end
+MAKE_HOOK_MATCH(StandardLevelGameplayManager_OnDestroy, &StandardLevelGameplayManager::OnDestroy, void, StandardLevelGameplayManager* self) {
     getLogger().info("Song Ended");
     presenceManager->statusLock.lock();
     presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
     presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
     presenceManager->statusLock.unlock();
-    SongEnd(self);
+    StandardLevelGameplayManager_OnDestroy(self);
 }
 
-MAKE_HOOK_OFFSETLESS(MultiplayerSongEnd, void, Il2CppObject* self) {
+// Called on multiplayer level end
+MAKE_HOOK_MATCH(MultiplayerLocalActivePlayerGameplayManager_OnDisable, &MultiplayerLocalActivePlayerGameplayManager::OnDisable, void, MultiplayerLocalActivePlayerGameplayManager* self) {
     getLogger().info("Multiplayer Song Ended");
     presenceManager->statusLock.lock();
     presenceManager->playingLevel = std::nullopt; // Reset the currently playing song to None
     presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
     presenceManager->statusLock.unlock();
-    SongEnd(self);
+    MultiplayerLocalActivePlayerGameplayManager_OnDisable(self);
 }
 
-MAKE_HOOK_OFFSETLESS(TutorialStart, void, Il2CppObject* self)   {
+// Called on tutorial start
+MAKE_HOOK_MATCH(TutorialSongController_Awake, &TutorialSongController::Awake, void, TutorialSongController* self)   {
     getLogger().info("Tutorial starting");
     presenceManager->statusLock.lock();
     presenceManager->playingTutorial = true;
     presenceManager->statusLock.unlock();
-    TutorialStart(self);
+    TutorialSongController_Awake(self);
 }
-MAKE_HOOK_OFFSETLESS(TutorialEnd, void, Il2CppObject* self)   {
+
+MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDestroy, void, TutorialSongController* self)   {
     getLogger().info("Tutorial ending");
     presenceManager->statusLock.lock();
     presenceManager->playingTutorial = false;
     presenceManager->paused = false; // If we are pasued, unpause us, since we are returning to the menu
     presenceManager->statusLock.unlock();
-    TutorialEnd(self);
+    TutorialSongController_OnDestroy(self);
 }
 
-MAKE_HOOK_OFFSETLESS(CampaignLevelStart, void,
-        Il2CppObject* self,
-        Il2CppString* missionId,
-        Il2CppObject* difficultyBeatmap,
-        Il2CppObject* previewBeatmapLevel,
-        Il2CppArray* missionObjectives,
-        Il2CppObject* overrideColorScheme,
-        Il2CppObject* gameplayModifiers,
-        Il2CppObject* playerSpecificSettings,
-        Il2CppString* backButtonText)   {
+MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, &MissionLevelScenesTransitionSetupDataSO::Init, void,
+    MissionLevelScenesTransitionSetupDataSO* self,
+    Il2CppString* missionId,
+    GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap,
+    GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel,
+    Array<GlobalNamespace::MissionObjective*>* missionObjectives,
+    GlobalNamespace::ColorScheme* overrideColorScheme,
+    GlobalNamespace::GameplayModifiers* gameplayModifiers,
+    GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
+    Il2CppString* backButtonText)   {
     getLogger().info("Campaign level starting");
     currentFrame = -1;
     presenceManager->statusLock.lock();
     presenceManager->playingCampaign = true;
     presenceManager->statusLock.unlock();
-    CampaignLevelStart(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
+
+    MissionLevelScenesTransitionSetupDataSO_Init(self, missionId, difficultyBeatmap, previewBeatmapLevel, missionObjectives, overrideColorScheme, gameplayModifiers, playerSpecificSettings, backButtonText);
 }
-MAKE_HOOK_OFFSETLESS(CampaignLevelEnd, void, Il2CppObject* self)   {
+
+// Called upon mission levels (campaign levels) ending.
+MAKE_HOOK_MATCH(MissionLevelGameplayManager_OnDestroy, &MissionLevelGameplayManager::OnDestroy, void, MissionLevelGameplayManager* self)   {
     getLogger().info("Campaign level ending");
     presenceManager->statusLock.lock();
     presenceManager->playingCampaign = false;
     presenceManager->paused = false; // If we are paused, unpause us, since we are returning to the menu
     presenceManager->statusLock.unlock();
-    CampaignLevelEnd(self);
+    MissionLevelGameplayManager_OnDestroy(self);
 }
 
-MAKE_HOOK_OFFSETLESS(GamePause, void, Il2CppObject* self)   {
+MAKE_HOOK_MATCH(PauseController_Pause, &PauseController::Pause, void, PauseController* self)   {
     getLogger().info("Game paused");
     presenceManager->statusLock.lock();
     presenceManager->paused = true;
     presenceManager->statusLock.unlock();
-    GamePause(self);
+    PauseController_Pause(self);
 }
-MAKE_HOOK_OFFSETLESS(GameResume, void, Il2CppObject* self)   {
+
+MAKE_HOOK_MATCH(PauseController_HandlePauseMenuManagerDidPressContinueButton, &PauseController::HandlePauseMenuManagerDidPressContinueButton, void, PauseController* self)   {
     getLogger().info("Game resumed");
     presenceManager->statusLock.lock();
     presenceManager->paused = false;
     presenceManager->statusLock.unlock();
-    GameResume(self);
+    PauseController_HandlePauseMenuManagerDidPressContinueButton(self);
 }
 
-MAKE_HOOK_OFFSETLESS(AudioUpdate, void, Il2CppObject* self) {
-    AudioUpdate(self);
+// Used to update song time - this is called every frame and is in a convenient place allowing us to easily get the song time
+MAKE_HOOK_MATCH(AudioTimeSyncController_Update, &AudioTimeSyncController::Update, void, AudioTimeSyncController* self) {
+    AudioTimeSyncController_Update(self);
+    // Only update the time every 36 frames or so (0.5 seconds on Q1, shorter on Q2 but whatever) to avoid log spam
+    constexpr int TIME_UPDATE_INTERVAL = 36;
 
-    // Only update the time every 36 frames (0.5 seconds) to avoid log spam
     currentFrame++;
-    if(currentFrame % 36 != 0) {return;}
+    if(currentFrame % TIME_UPDATE_INTERVAL != 0) {return;}
     currentFrame = 0;
 
-    float time = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songTime"));
-    float endTime = CRASH_UNLESS(il2cpp_utils::RunMethodUnsafe<float>(self, "get_songEndTime"));
+    float time = self->get_songTime();
+    float endTime = self->get_songEndTime();
 
     presenceManager->statusLock.lock();
     presenceManager->timeLeft = (int) (endTime - time);
@@ -315,8 +403,8 @@ void saveDefaultConfig()  {
 }
 
 extern "C" void setup(ModInfo& info) {
-    info.id = "discord-presence";
-    info.version = "0.3.1";
+    info.id = ID;
+    info.version = VERSION;
     modInfo = info;
     getLogger().info("Modloader name: %s", Modloader::getInfo().name.c_str());
     getConfig().Load();
@@ -331,19 +419,19 @@ extern "C" void load() {
 
     // Install our function hooks
     Logger& logger = getLogger();
-    INSTALL_HOOK_OFFSETLESS(logger, RefreshContent, il2cpp_utils::FindMethodUnsafe("", "StandardLevelDetailView", "RefreshContent", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, SongStart, il2cpp_utils::FindMethodUnsafe("", "StandardLevelScenesTransitionSetupDataSO", "Init", 10));
-    INSTALL_HOOK_OFFSETLESS(logger, SongEnd, il2cpp_utils::FindMethodUnsafe("", "StandardLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelStart, il2cpp_utils::FindMethodUnsafe("", "MissionLevelScenesTransitionSetupDataSO", "Init", 8));
-    INSTALL_HOOK_OFFSETLESS(logger, CampaignLevelEnd, il2cpp_utils::FindMethodUnsafe("", "MissionLevelGameplayManager", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, TutorialStart, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "Awake", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, TutorialEnd, il2cpp_utils::FindMethodUnsafe("", "TutorialSongController", "OnDestroy", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GamePause, il2cpp_utils::FindMethodUnsafe("", "PauseController", "Pause", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, GameResume, il2cpp_utils::FindMethodUnsafe("", "PauseController", "HandlePauseMenuManagerDidPressContinueButton", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, AudioUpdate, il2cpp_utils::FindMethodUnsafe("", "AudioTimeSyncController", "Update", 0));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongStart, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLevelScenesTransitionSetupDataSO", "Init", 10));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerJoinLobby, il2cpp_utils::FindMethodUnsafe("", "GameServerLobbyFlowCoordinator", "DidActivate", 3));
-    INSTALL_HOOK_OFFSETLESS(logger, MultiplayerSongEnd, il2cpp_utils::FindMethodUnsafe("", "MultiplayerLocalActivePlayerGameplayManager", "OnDisable", 0));
+    INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
+    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
+    INSTALL_HOOK(logger, StandardLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(logger, MissionLevelScenesTransitionSetupDataSO_Init);
+    INSTALL_HOOK(logger, MissionLevelGameplayManager_OnDestroy);
+    INSTALL_HOOK(logger, TutorialSongController_Awake);
+    INSTALL_HOOK(logger, TutorialSongController_OnDestroy);
+    INSTALL_HOOK(logger, PauseController_Pause);
+    INSTALL_HOOK(logger, PauseController_HandlePauseMenuManagerDidPressContinueButton);
+    INSTALL_HOOK(logger, AudioTimeSyncController_Update);
+    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
+    INSTALL_HOOK(logger, GameServerLobbyFlowCoordinator_DidActivate);
+    INSTALL_HOOK(logger, MultiplayerLocalActivePlayerGameplayManager_OnDisable);
 
     getLogger().debug("Installed all hooks!");
     presenceManager = new PresenceManager(getLogger(), getConfig().config);

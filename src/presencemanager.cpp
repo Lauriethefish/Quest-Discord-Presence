@@ -58,7 +58,7 @@ std::string PresenceManager::constructResponse() {
     }   else    {
         configSection = "menuPresence";
     }
-    logger.info("Using " + configSection + " config section.");
+    logger.info("Using %s config section", configSection.c_str());
 
     bool didStatusTypeChange = configSection != previousSectionUsed;
     previousSectionUsed = configSection;
