@@ -73,8 +73,8 @@ std::string difficultyToString(BeatmapDifficulty difficulty)  {
 // Define the current level by finding info from the IBeatmapLevel object
 MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
     StandardLevelDetailView_RefreshContent(self);
+    IPreviewBeatmapLevel* level = reinterpret_cast<IPreviewBeatmapLevel*>(self->level);
 
-    IPreviewBeatmapLevel* level = reinterpret_cast<IPreviewBeatmapLevel*>(self->_get__level());
     // Check if the level is an instance of BeatmapLevelSO
     selectedLevel.name = to_utf8(csstrtostr(level->get_songName()));
     selectedLevel.levelAuthor = to_utf8(csstrtostr(level->get_levelAuthorName()));
@@ -225,7 +225,7 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     IMultiplayerSessionManager* sessionManager = reinterpret_cast<IMultiplayerSessionManager*>(UnityEngine::Resources::FindObjectsOfTypeAll<MultiplayerSessionManager*>()->values[0]);
     
     // Used for updating current player count in the DidChange event
-    ILobbyPlayersDataModel* lobbyPlayersDataModel = self->_get__lobbyPlayersDataModel();
+    ILobbyPlayersDataModel* lobbyPlayersDataModel = self->lobbyPlayersDataModel;
     
     
     int maxPlayers = sessionManager->get_maxPlayerCount();
