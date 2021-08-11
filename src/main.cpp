@@ -420,7 +420,7 @@ extern "C" void load() {
     // Install our function hooks
     Logger& logger = getLogger();
     INSTALL_HOOK(logger, StandardLevelDetailView_RefreshContent);
-    INSTALL_HOOK(logger, MenuTransitionsHelper_StartMultiplayerLevel);
+    INSTALL_HOOK(logger, MenuTransitionsHelper_StartStandardLevel);
     INSTALL_HOOK(logger, StandardLevelGameplayManager_OnDestroy);
     INSTALL_HOOK(logger, MissionLevelScenesTransitionSetupDataSO_Init);
     INSTALL_HOOK(logger, MissionLevelGameplayManager_OnDestroy);
