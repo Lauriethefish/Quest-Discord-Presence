@@ -6,7 +6,7 @@
     "version": "0.3.2",
     "packageId": "com.beatgames.beatsaber",
     "packageVersion": "1.16.4",
-    "cover": "cover.png",
+    "coverImage": "cover.png",
     "modFiles": [
         "libdiscord-presence.so"
     ],
