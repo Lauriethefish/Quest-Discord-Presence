@@ -74,6 +74,9 @@ std::string difficultyToString(BeatmapDifficulty difficulty)  {
 MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView::RefreshContent, void, StandardLevelDetailView* self) {
     StandardLevelDetailView_RefreshContent(self);
     IPreviewBeatmapLevel* level = reinterpret_cast<IPreviewBeatmapLevel*>(self->level);
+    if(!level) {
+        return;
+    }
 
     // Check if the level is an instance of BeatmapLevelSO
     selectedLevel.name = to_utf8(csstrtostr(level->get_songName()));
