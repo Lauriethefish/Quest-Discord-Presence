@@ -7,7 +7,7 @@ Allows you to see which song you're playing along with other info while playing 
 - To set up the mod, you need to install the client on your PC. The client and installation instructions are [here](https://github.com/Lauriethefish/Quest-Discord-Presence-Client).
 
 ## Downloads
-[Mod Download](https://github.com/Lauriethefish/Quest-Discord-Presence/releases/latest)
+[Mod Download](https://www.questmodding.com/mods/discord-presence_v0.3.3.qmod)
 
 [Config File](https://github.com/Lauriethefish/Quest-Discord-Presence/blob/master/default-config.json)
 
