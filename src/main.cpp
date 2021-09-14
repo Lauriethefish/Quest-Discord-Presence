@@ -31,6 +31,7 @@
 #include "GlobalNamespace/IDifficultyBeatmap.hpp"
 #include "GlobalNamespace/ILobbyPlayersDataModel.hpp"
 #include "GlobalNamespace/BeatmapDifficulty.hpp"
+#include "GlobalNamespace/LobbyPlayersDataModel.hpp"
 #include "System/Collections/Generic/IReadOnlyDictionary_2.hpp"
 using namespace GlobalNamespace;
 
@@ -205,7 +206,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (
 
 void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager* multiplayerSessionManager, Il2CppString* userId) {
     presenceManager->statusLock.lock();
-    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount();
+    presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
     presenceManager->statusLock.unlock();
 }
 
@@ -223,24 +224,16 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     // TODO avoid FindObjectsOfTypeAll calls if possible
     // Not too much of an issue since we only do it once on multiplayer lobby start, but still not ideal
 
-    // Used for getting max player count
-    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
-    IMultiplayerSessionManager* sessionManager = reinterpret_cast<IMultiplayerSessionManager*>(UnityEngine::Resources::FindObjectsOfTypeAll<MultiplayerSessionManager*>()->values[0]);
     
     // Used for updating current player count in the DidChange event
-    ILobbyPlayersDataModel* lobbyPlayersDataModel = self->lobbyPlayersDataModel;
+    LobbyPlayersDataModel* lobbyPlayersDataModel = reinterpret_cast<LobbyPlayersDataModel*>(self->lobbyPlayersDataModel);
     
-    
+    // Used for getting max player count
+    // Previously used for getting current player count by listening to player connections/disconnections, however this isn't reliable, and yielded negative player counts
+    IMultiplayerSessionManager* sessionManager = lobbyPlayersDataModel->multiplayerSessionManager;
+
     int maxPlayers = sessionManager->get_maxPlayerCount();
     int numActivePlayers = sessionManager->get_connectedPlayerCount();
-    
-    // Used to update player count
-    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), lobbyPlayersDataModel, handleLobbyPlayersDataModelDidChange));
-
-    // Register disconnect from lobby event
-    sessionManager->add_disconnectedEvent(
-        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
-    );
 
     // Set the number of players in this lobby
     MultiplayerLobbyInfo lobbyInfo;
@@ -249,6 +242,14 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby.emplace(lobbyInfo);
     presenceManager->statusLock.unlock();
+    
+    // Used to update player count
+    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), sessionManager, handleLobbyPlayersDataModelDidChange));
+
+    // Register disconnect from lobby event
+    sessionManager->add_disconnectedEvent(
+        il2cpp_utils::MakeDelegate<System::Action_1<GlobalNamespace::DisconnectedReason>*>(classof(System::Action_1<GlobalNamespace::DisconnectedReason>*), static_cast<Il2CppObject*>(nullptr), onLobbyDisconnect)
+    );
 
     GameServerLobbyFlowCoordinator_DidActivate(self, firstActivation, addedToHierarchy, screenSystemEnabling);
 }
