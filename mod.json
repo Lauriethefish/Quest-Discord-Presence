@@ -3,9 +3,9 @@
     "name": "Discord Presence",
     "id": "discord-presence",
     "author": "Lauriethefish#6700",
-    "version": "0.3.4",
+    "version": "0.3.5",
     "packageId": "com.beatgames.beatsaber",
-    "packageVersion": "1.17.0",
+    "packageVersion": "1.17.1",
     "coverImage": "cover.png",
     "modFiles": [
         "libdiscord-presence.so"
