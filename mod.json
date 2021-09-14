@@ -4,6 +4,7 @@
     "id": "discord-presence",
     "author": "Lauriethefish#6700",
     "version": "0.3.5",
+    "description": "Allows discord rich presence to see which song you're playing, the current time, and much more.",
     "packageId": "com.beatgames.beatsaber",
     "packageVersion": "1.17.1",
     "coverImage": "cover.png",
