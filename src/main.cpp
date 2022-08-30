@@ -88,22 +88,10 @@ MAKE_HOOK_MATCH(StandardLevelDetailView_RefreshContent, &StandardLevelDetailView
 static int currentFrame = -1;
 
 // Called when starting a non-multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (MenuTransitionsHelper::*)(
-        Il2CppString*,
-        IDifficultyBeatmap*,
-        IPreviewBeatmapLevel*,
-        OverrideEnvironmentSettings*,
-        ColorScheme*,
-        GameplayModifiers*,
-        PlayerSpecificSettings*,
-        PracticeSettings*,
-        Il2CppString*,
-        bool,
-        System::Action*,
-        System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>*)>(&MenuTransitionsHelper::StartStandardLevel),
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (GlobalNamespace::MenuTransitionsHelper::*)(::StringW, ::GlobalNamespace::IDifficultyBeatmap*, ::GlobalNamespace::IPreviewBeatmapLevel*, ::GlobalNamespace::OverrideEnvironmentSettings*, ::GlobalNamespace::ColorScheme*, ::GlobalNamespace::GameplayModifiers*, ::GlobalNamespace::PlayerSpecificSettings*, ::GlobalNamespace::PracticeSettings*, ::StringW, bool, bool, ::System::Action*, ::System::Action_2<::GlobalNamespace::StandardLevelScenesTransitionSetupDataSO*, ::GlobalNamespace::LevelCompletionResults*>*)>(&GlobalNamespace::MenuTransitionsHelper::StartStandardLevel),
         void,
         MenuTransitionsHelper* self,
-        Il2CppString* gameMode,
+        StringW gameMode,
         IDifficultyBeatmap* difficultyBeatmap,
         IPreviewBeatmapLevel* previewBeatmapLevel,
         OverrideEnvironmentSettings* overrideEnvironmentSettings,
@@ -111,8 +99,9 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (Menu
         GameplayModifiers* gameplayModifiers,
         PlayerSpecificSettings* playerSpecificSettings,
         PracticeSettings* practiceSettings,
-        Il2CppString* backButtonText,
-        bool useTestNoteCutCountEffects,
+        StringW backButtonText,
+        bool useTestNoteCutSoundEffects,
+        bool startPaused,
         System::Action* beforeSceneSwitchCallback,
         System::Action_2<StandardLevelScenesTransitionSetupDataSO*, LevelCompletionResults*>* levelFinishedCallback) {
             getLogger().info("Song Started");
@@ -141,30 +130,17 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartStandardLevel, static_cast<void (Menu
         playerSpecificSettings,
         practiceSettings,
         backButtonText,
-        useTestNoteCutCountEffects,
+        useTestNoteCutSoundEffects,
+        startPaused,
         beforeSceneSwitchCallback,
         levelFinishedCallback
     );
 }
 
 // Called when starting a multiplayer level
-MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (MenuTransitionsHelper::*)(
-    Il2CppString*,
-    IPreviewBeatmapLevel*,
-    BeatmapDifficulty,
-    BeatmapCharacteristicSO*,
-    IDifficultyBeatmap*,
-    ColorScheme*,
-    GameplayModifiers*,
-    PlayerSpecificSettings*,
-    PracticeSettings*,
-    Il2CppString*,
-    bool,
-    System::Action*,
-    System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>*,
-    System::Action_1<DisconnectedReason>*)>(&MenuTransitionsHelper::StartMultiplayerLevel), void,
+MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (GlobalNamespace::MenuTransitionsHelper::*)(::StringW, ::GlobalNamespace::IPreviewBeatmapLevel*, ::GlobalNamespace::BeatmapDifficulty, ::GlobalNamespace::BeatmapCharacteristicSO*, ::GlobalNamespace::IDifficultyBeatmap*, ::GlobalNamespace::ColorScheme*, ::GlobalNamespace::GameplayModifiers*, ::GlobalNamespace::PlayerSpecificSettings*, ::GlobalNamespace::PracticeSettings*, ::StringW, bool, ::System::Action*, ::System::Action_2<::GlobalNamespace::MultiplayerLevelScenesTransitionSetupDataSO*, ::GlobalNamespace::MultiplayerResultsData*>*, ::System::Action_1<::GlobalNamespace::DisconnectedReason>*)>(&GlobalNamespace::MenuTransitionsHelper::StartMultiplayerLevel), void,
     MenuTransitionsHelper* self,
-    Il2CppString* gameMode,
+    StringW gameMode,
     IPreviewBeatmapLevel* previewBeatmapLevel,
     BeatmapDifficulty beatmapDifficulty,
     BeatmapCharacteristicSO* beatmapCharacteristic,
@@ -173,7 +149,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (
     GameplayModifiers* gameplayModifiers,
     PlayerSpecificSettings* playerSpecificSettings,
     PracticeSettings* practiceSettings,
-    Il2CppString* backButtonText,
+    StringW backButtonText,
     bool useTestNoteCutSoundEffects,
     System::Action* beforeSceneSwitchCallback,
     System::Action_2<MultiplayerLevelScenesTransitionSetupDataSO*, MultiplayerResultsData*>* levelFinishedCallback,
@@ -204,7 +180,7 @@ MAKE_HOOK_MATCH(MenuTransitionsHelper_StartMultiplayerLevel,  static_cast<void (
     );
 }
 
-void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager* multiplayerSessionManager, Il2CppString* userId) {
+void handleLobbyPlayersDataModelDidChange(IMultiplayerSessionManager* multiplayerSessionManager, StringW userId) {
     presenceManager->statusLock.lock();
     presenceManager->multiplayerLobby->numberOfPlayers = multiplayerSessionManager->get_connectedPlayerCount() + 1;
     presenceManager->statusLock.unlock();
@@ -244,7 +220,7 @@ MAKE_HOOK_MATCH(GameServerLobbyFlowCoordinator_DidActivate, &GameServerLobbyFlow
     presenceManager->statusLock.unlock();
     
     // Used to update player count
-    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<Il2CppString*>*>(classof(System::Action_1<Il2CppString*>*), sessionManager, handleLobbyPlayersDataModelDidChange));
+    lobbyPlayersDataModel->add_didChangeEvent(il2cpp_utils::MakeDelegate<System::Action_1<StringW>*>(classof(System::Action_1<StringW>*), sessionManager, handleLobbyPlayersDataModelDidChange));
 
     // Register disconnect from lobby event
     sessionManager->add_disconnectedEvent(
@@ -294,14 +270,14 @@ MAKE_HOOK_MATCH(TutorialSongController_OnDestroy, &TutorialSongController::OnDes
 
 MAKE_HOOK_MATCH(MissionLevelScenesTransitionSetupDataSO_Init, &MissionLevelScenesTransitionSetupDataSO::Init, void,
     MissionLevelScenesTransitionSetupDataSO* self,
-    Il2CppString* missionId,
+    StringW missionId,
     GlobalNamespace::IDifficultyBeatmap* difficultyBeatmap,
     GlobalNamespace::IPreviewBeatmapLevel* previewBeatmapLevel,
-    Array<GlobalNamespace::MissionObjective*>* missionObjectives,
+    ArrayW<GlobalNamespace::MissionObjective*> missionObjectives,
     GlobalNamespace::ColorScheme* overrideColorScheme,
     GlobalNamespace::GameplayModifiers* gameplayModifiers,
     GlobalNamespace::PlayerSpecificSettings* playerSpecificSettings,
-    Il2CppString* backButtonText)   {
+    StringW backButtonText)   {
     getLogger().info("Campaign level starting");
     currentFrame = -1;
     presenceManager->statusLock.lock();

@@ -3,18 +3,28 @@
     {
       "defines": [
         "MOD_ID=\"discord-presence\"",
-        "VERSION=\"0.3.5\"",
+        "VERSION=\"0.3.6\"",
         "__GNUC__",
         "__aarch64__",
         "ID=\"discord-presence\""
       ],
       "includePath": [
-        "${workspaceFolder}/**",
-        "${workspaceFolder}/extern/libil2cpp/il2cpp/libil2cpp",
-        "${workspaceFolder}/extern/codegen/include",
-        "C:/ndk/android-ndk-r21d/**",
-        "${workspaceFolder}/shared",
-        "${workspaceFolder}/extern"
+                "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
+                "${workspaceFolder}/extern/includes/codegen/include",
+                "${workspaceFolder}/extern/includes",
+                "${workspaceFolder}/extern/includes/config-utils/shared",
+                "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/external/google/sparsehash",
+                "${workspaceFolder}/include",
+                "${workspaceFolder}/shared",
+                "${workspaceFolder}",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/aarch64-linux-android",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/c++/v1",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/12.0.9/include",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/sources/cxx-stl/llvm-libc++/include",
+                "Z:/HeckQuest/android-ndk-r23-windows/android-ndk-r23/sources/cxx-stl/llvm-libc++abi/include",
+                "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.32.31326/include",
+                "${default}"
       ],
       "name": "Quest",
       "cStandard": "c11",
