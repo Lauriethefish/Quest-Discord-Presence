@@ -31,7 +31,7 @@ set(INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_compile_options(-frtti -fexceptions)
 add_compile_options(-O3)
 # compile definitions used
-add_compile_definitions(VERSION=\"0.3.6\")
+add_compile_definitions(VERSION=\"0.4.0\")
 add_compile_definitions(ID=\"discord-presence\")
 add_compile_definitions(MOD_ID=\"discord-presence\")
 
