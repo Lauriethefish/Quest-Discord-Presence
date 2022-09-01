@@ -58,3 +58,10 @@ Android.mk.backup
 
 # Build QMODS
 *.qmod
+
+#Cmake stuff
+CmakeFiles/
+*.cmake*
+
+#ninja stuff
+*.ninja*
