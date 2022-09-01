@@ -38,11 +38,6 @@
       "versionRange": "^0.15.18",
       "additionalData": {}
     },
-    {
-      "id": "config-utils",
-      "versionRange": "^0.8.0",
-      "additionalData": {}
-    }
   ],
   "additionalData": {}
 }
