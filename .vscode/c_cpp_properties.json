@@ -12,8 +12,6 @@
                 "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/libil2cpp",
                 "${workspaceFolder}/extern/includes/codegen/include",
                 "${workspaceFolder}/extern/includes",
-                "${workspaceFolder}/extern/includes/config-utils/shared",
-                "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/external/google/sparsehash",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/shared",
                 "${default}"
