@@ -16,7 +16,6 @@
                 "${workspaceFolder}/extern/includes/libil2cpp/il2cpp/external/google/sparsehash",
                 "${workspaceFolder}/include",
                 "${workspaceFolder}/shared",
-                "${workspaceFolder}",
                 "${default}"
       ],
       "name": "Quest",
